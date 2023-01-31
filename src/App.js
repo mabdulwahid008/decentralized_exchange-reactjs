@@ -3,7 +3,8 @@ import './App.css';
 import Web3Modal from 'web3modal'
 import { BigNumber, providers, utils } from 'ethers'
 import { getCDTokenBalance, getEtherBalance, getLPTokenBalance, getReserves } from './utills/getAmount';
-import { calculateCD } from './utills/addLiquidity'
+import { addLiquidity, calculateCD } from './utills/addLiquidity'
+import { getTokensAfterRemove, removeLiquidity } from './utills/removeLiquidity';
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false)
@@ -20,11 +21,77 @@ function App() {
 
   const [loading, setLoading] = useState(false)
 
-
   const [addEther, setAddEther] = useState(zero)
-  const [addCDToken, setAddCDTOken] = useState(zero)
+  const [addCDToken, setAddCDToken] = useState(zero)
 
-  const [removeLPTOkens, setRemoveLPTOkens] = useState(0)
+  const [removeLPTokens, setRemoveLPTOkens] = useState(0)
+  const [removeEther, setRemoveEther] = useState(zero)
+  const [removeCDTokens, setRemoveCDTokens] = useState(zero)
+
+  const _addLiquidity = async() => {
+  try {
+    const addEtherWei = utils.parseEther(addEther.toString())
+
+      if(!addCDToken.eq(zero) && !addEtherWei.eq(zero)){
+        const signer = await getProviderOrsinger(true)
+        setLoading(true)
+
+        await addLiquidity(signer, addCDToken, addEtherWei) 
+
+        setLoading(false)
+        setAddCDToken(zero)
+
+        await getAmounts()
+      }
+      
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+      setAddCDToken(zero);
+    }
+  }
+
+  const _getTokensAfterRemove = async(_removeLPTokens) => {
+    try {
+      const provider = await getProviderOrsinger()
+      const removeLPToken = utils.parseEther(_removeLPTokens)
+
+      const _ethBalance = await getEtherBalance(provider, null, true)
+
+      const cryptoDevTokens = await getReserves()
+
+      const { _removeEther, _removeCD } = await getTokensAfterRemove(provider, removeLPToken, _ethBalance, cryptoDevTokens)
+
+      setRemoveEther(_removeEther)
+      setRemoveCDTokens(_removeCD)
+
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const _removeLiquidity = async() => {
+    try {
+      const signer = await getProviderOrsinger(true)
+
+      const removeLPTokensWei = utils.parseEther(removeLPTokens)
+
+      setLoading(true)
+
+      await removeLiquidity(signer, removeLPTokensWei)
+      setLoading(false)
+
+      await getAmounts();
+
+      setRemoveCDTokens(zero);
+      setRemoveEther(zero);
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+      setRemoveCDTokens(zero);
+      setRemoveEther(zero);
+    }
+  }
 
   const getAmounts = async()=>{
     try {
@@ -108,25 +175,31 @@ function App() {
           {utils.parseEther(CDReserves.toString()).eq(zero) ? 
           <div>
               <input type="number" placeholder='Amount of Ether' className='input' onChange={(e)=>setAddEther(e.target.value || "0")}/>
-              <input type="number" placeholder='Amount of Crypto Dev Token' className='input' onChange={(e)=>setAddCDTOken(BigNumber.from(utils.parseEther(e.target.value || "0")))}/>
-              <button className='button1'>Add Liquidity</button>
+              <input type="number" placeholder='Amount of Crypto Dev Token' className='input' onChange={(e)=>setAddCDToken(BigNumber.from(utils.parseEther(e.target.value || "0")))}/>
+              <button className='button1' onClick={_addLiquidity}>Add Liquidity</button>
           </div> 
           : 
           <div>
             <input type="number" placeholder='Amount of Ether' className='input' onChange={async(e)=>{
               const _addCDToken = await calculateCD(e.target.value || "0", ethContractBalance, CDReserves)
-              setAddCDTOken(_addCDToken)
+              setAddCDToken(_addCDToken)
             }}/>
-            <button className='button1'>Add Liquidity</button>
             <div className='inputDiv'>{`You will need ${addCDToken} CD Tokens`}</div>
+            <button className='button1' onClick={_addLiquidity}>Add Liquidity</button>
           </div>}
         </div>
         <div>
           <input type="number" placeholder='Amount of LP TOkens' className='input' onChange={async(e) => {
-            setRemoveLPTOkens(e.target.value)
+            setRemoveLPTOkens(e.target.value || "0")
+            await _getTokensAfterRemove(removeLPTokens || "0")
           }}/>
+          <div className='inputDiv'>{`You will get ${utils.formatEther(removeCDTokens)} Crypto Dev Tokens and ${utils.formatEther(removeEther)} Eth`}</div>
+          <button className='button1' onClick={_removeLiquidity}>Remove Liquidity</button>
         </div>
       </>
+    }
+    else{
+      
     }
   }
 

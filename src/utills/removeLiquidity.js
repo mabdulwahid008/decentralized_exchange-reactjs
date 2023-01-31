@@ -15,7 +15,7 @@ export const removeLiquidity = async(signer, removeLPTokensWei) => {
     }
 }
 
-const getTokensAfterRemove = async(provider, removeLPTokenWei, ethBalance, cryptoDevTokenReserve) =>{
+export const getTokensAfterRemove = async(provider, removeLPTokenWei, ethBalance, cryptoDevTokenReserve) =>{
     try {
         const contract = new Contract(
             DEX_CONTRACT_ADDRESS,
@@ -24,9 +24,9 @@ const getTokensAfterRemove = async(provider, removeLPTokenWei, ethBalance, crypt
         )
         const totalSupply = await contract.totalSupply()
 
-        const _removeEther = ethBalance.mul(removeLPTokenWei).div(totalSupply)
+        const _removeEther = (ethBalance * removeLPTokenWei) / (totalSupply)
 
-        const _removeCD = cryptoDevTokenReserve.mul(removeLPTokenWei).div(totalSupply)
+        const _removeCD = (cryptoDevTokenReserve * removeLPTokenWei) / (totalSupply)
 
         return { _removeEther, _removeCD }
     } catch (error) {
