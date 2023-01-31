@@ -29,7 +29,7 @@ export const calculateCD = async(_addEther = "0", etherBalanceContract, cdTokenR
     try {
         const addEtherAmountWei = utils.parseEther(_addEther)
 
-        const cryptoDevTokenAmmount = addEtherAmountWei.mul(cdTokenReserve).div(etherBalanceContract)
+        const cryptoDevTokenAmmount = (addEtherAmountWei * cdTokenReserve) / (etherBalanceContract)
         return cryptoDevTokenAmmount;
     } catch (error) {
         console.error(error);

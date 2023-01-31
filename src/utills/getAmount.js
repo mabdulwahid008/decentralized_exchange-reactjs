@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { CRYPTODEV_CONTRACT_ADDRESS, CRYPTODEV_CONTRACT_ABI, DEX_CONTRACT_ADDRESS, DEX_CONTRACT_ABI } from '../constants/index'
 
-export const getBalance = async(provider, address, contract = false) => {
+export const getEtherBalance = async(provider, address, contract = false) => {
     try {
         if(contract){
             const balance = await provider.getBalance(DEX_CONTRACT_ADDRESS)
