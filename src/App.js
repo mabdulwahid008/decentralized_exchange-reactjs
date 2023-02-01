@@ -5,6 +5,7 @@ import { BigNumber, providers, utils } from 'ethers'
 import { getCDTokenBalance, getEtherBalance, getLPTokenBalance, getReserves } from './utills/getAmount';
 import { addLiquidity, calculateCD } from './utills/addLiquidity'
 import { getTokensAfterRemove, removeLiquidity } from './utills/removeLiquidity';
+import { getAmountOfTokensReceivedFromSwap, swapTokens } from './utills/swap';
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false)
@@ -27,6 +28,46 @@ function App() {
   const [removeLPTokens, setRemoveLPTOkens] = useState(0)
   const [removeEther, setRemoveEther] = useState(zero)
   const [removeCDTokens, setRemoveCDTokens] = useState(zero)
+
+  const [swapAmount, setSwapAmount] = useState("0")
+  const [tokenReceivedAfterSwap, setTokenReceivedAfterSwap] = useState(zero)
+  const [ethSelected, setEthSelected] = useState(true)
+
+  const _swapTokens = async() => {
+    try {
+      const swapAmountWei = utils.parseEther(swapAmount.toString())
+
+      if(!swapAmountWei.eq(zero)){
+        const signer = await getProviderOrsinger(true)
+        setLoading(true)
+        await swapTokens(signer, swapAmountWei, tokenReceivedAfterSwap, ethSelected)
+        setLoading(false)
+        getAmounts()
+        setSwapAmount("")
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const _getAmountOfTokenReceivedFromSwap = async(swapAmount) => {
+    try {
+      const _swapAmountWei = utils.parseEther(swapAmount.toString())
+      if(!_swapAmountWei.eq(zero)){
+        const provider = await getProviderOrsinger()
+
+        const _ethBalance = await getEtherBalance(provider, null, true)
+
+        const amountOfTokens = await getAmountOfTokensReceivedFromSwap(_swapAmountWei, provider, ethSelected, _ethBalance, CDReserves)
+
+        setTokenReceivedAfterSwap(amountOfTokens)
+      }
+      else
+        setTokenReceivedAfterSwap(zero)
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const _addLiquidity = async() => {
   try {
@@ -199,7 +240,29 @@ function App() {
       </>
     }
     else{
-      
+      return <div>
+        <input type="amount" placeholder='Amount' className='input' value={swapAmount} onChange={async(e)=>{
+          setSwapAmount(e.target.value || "0")
+          await _getAmountOfTokenReceivedFromSwap(e.target.value || "0")
+        }} />
+        <select className='select' name='dropdowm' id="dropdown" onChange={async()=> {
+          setEthSelected(!ethSelected)
+          await _getAmountOfTokenReceivedFromSwap("0")
+          setSwapAmount(0)
+        }}>
+            <option value="eth">Ethereum</option>
+            <option value="cryptoDevToken">Crypto Dev Token</option>
+        </select>
+        <br/>
+        <div className='inputDiv'>
+          {ethSelected?
+          `You will get ${utils.formatEther(tokenReceivedAfterSwap)} CD Tokens`
+          :
+          `You will get ${utils.formatEther(tokenReceivedAfterSwap)} Ethers`
+          }
+        </div>
+        <button className='button1' onClick={_swapTokens}>Swap</button>
+      </div>
     }
   }
 
