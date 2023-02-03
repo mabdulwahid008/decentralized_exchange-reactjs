@@ -28,6 +28,7 @@ export const addLiquidity = async(signer, addCDAmountWei, addEthAmountWei) => {
 export const calculateCD = async(_addEther = "0", etherBalanceContract, cdTokenReserve) => {
     try {
         const addEtherAmountWei = utils.parseEther(_addEther)
+        console.log(addEtherAmountWei);
 
         const cryptoDevTokenAmmount = (addEtherAmountWei * cdTokenReserve) / (etherBalanceContract)
         return cryptoDevTokenAmmount;
